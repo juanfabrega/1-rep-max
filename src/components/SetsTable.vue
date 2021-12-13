@@ -1,13 +1,13 @@
 <template>
-  <table class="table" style="width:">
+  <table class="table" style="width: 100%;">
   <thead>
     <tr>
-      <th>Date</th>
-      <th>Body Weight</th>
-      <th>Lift</th>
-      <th>Weight</th>
-      <th>Reps</th>
-      <th>1 Rep Max</th>
+      <th style="min-width: 120px;">Date</th>
+      <th style="min-width: 130px;">Body Weight</th>
+      <th style="min-width: 150px;">Lift</th>
+      <th style="min-width: 80px;">Weight</th>
+      <th style="min-width: 80px;">Reps</th>
+      <th style="min-width: 110px;">1 Rep Max</th>
     </tr>
   </thead>
   <tbody>

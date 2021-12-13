@@ -1,35 +1,42 @@
 <template>
   <div id="app" class="container">
-    <AddSetModal v-if="isAddingSet" @close="handleModalClose" />
+    <AddSetModal v-if="isAddingSet" @close="handleModalClose" @newSetAdded="fetchInitialData" />
     <main v-if="!isLoading">
-      <section class="section pb-2 px-0">
+      <section class="section pb-2 px-4">
         <div class="is-flex is-justify-content-space-between">
-          <h2 class="title is-2 mb-0">1 Rep Max</h2>
+          <h1 class="title is-3 mb-0">1 Rep Max</h1>
           <button class="button is-primary" @click.prevent="handleClickAddSet">+ Add New Set</button>
         </div>
       </section>
-      <section class="section has-background-white mt-5">
-        <SetsTable :sets="tableData" :liftTypes="liftTypes" />
-      </section>
-      <section class="section has-background-white mt-5">
-        <div class="columns">
-          <div v-for="max in maxes" :key="max.key" class="column">
+      <section class="section has-background-white mt-5 p-5">
+        <div v-for="chunk in chunkedMaxes" :key="chunk.key" class="columns">
+          <div v-for="max in chunk" :key="max.key" class="column">
             <div class="card">
               <header class="card-header">
                 <div class="card-header-title">
-                  {{ max.lift }}
+                  {{ liftTypes[max.liftType].name }}
                 </div>
               </header>
               <div class="card-content">
-                <h3 class="title is-3">{{ calculateOneRepMax(max.weight, max.reps) }}</h3>
-                <p>({{ max.weight }} x {{ max.reps }})</p>
+                <div class="columns">
+                  <div class="column is-4">
+                    <h3 class="title is-3">{{ calculateOneRepMax(max.weight, max.reps) }}</h3>
+                    <p>({{ max.weight }} x {{ max.reps }})</p>
+                  </div>
+                  <div class="column">
+                    <LineChart
+                      :chartData="{ datasets: [...dataSets.filter(dataset => dataset.liftTypeId === max.liftType)]}"
+                      :options="chartOptions" :styles="{ height: '200px', width: '240px', position: 'relative' }"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
-      <section class="section has-background-white mt-5">
-        <LineChart :chartData="chartData" :options="chartOptions" />
+      <section class="section has-background-white mt-5" style="overflow-x: scroll;">
+        <SetsTable :sets="tableData" :liftTypes="liftTypes" />
       </section>
     </main>
     <main v-else>
@@ -42,6 +49,7 @@
 import moment from 'moment';
 import { getCollection } from '@/services/Database.service';
 import { dictionaryFromDocumentArray } from '@/helpers/Data.helpers';
+import { calculateOneRepMax } from '@/helpers/Max.helpers';
 import AddSetModal from '@/components/AddSetModal.vue';
 import LineChart from '@/components/LineChart';
 import SetsTable from '@/components/SetsTable';
@@ -72,8 +80,8 @@ export default {
       isAddingSet: false,
       liftTypes: {},
       sets: {},
-      maxes: [],
       chartOptions: {
+        legend: false,
         scales: {
           xAxes: [{
             type: 'time',
@@ -83,7 +91,11 @@ export default {
               },
               tooltipFormat: 'MMMM D \'YY'
             },
-            position: 'bottom'
+            position: 'bottom',
+            ticks: {
+              autoskip: true,
+              maxTicksLimit: 10,
+            },
           }]
         },
         hover: {
@@ -97,19 +109,16 @@ export default {
   },
 
   computed: {
-    chartData() {
-      return {
-        datasets: [...this.dataSets],
-      };
-    },
     dataSets() {
       return Object.values(this.liftTypes)
         .sort((a, b) => a.name - b.name)
         .map((liftType, index) => ({
+          liftTypeId: liftType.id,
           label: liftType.name,
           backgroundColor: 'transparent',
           borderColor: lineColors[index],
           pointBackgroundColor: lineColors[index],
+          tension: 0.3,
           pointRadius: 4,
           data: Object.values(this.sets)
             .sort((a, b) => moment(a.date) - moment(b.date))
@@ -120,7 +129,18 @@ export default {
       return Object.values(this.sets)
         .sort((a, b) => moment(a.date) - moment(b.date))
         .map(set => ({ ...set, oneRepMax: this.calculateOneRepMax(set.weight, set.reps) }));
-    }
+    },
+    maxes() {
+      return Object.values(this.liftTypes)
+        .map(liftType => (
+          Object.values(this.sets)
+            .filter(set => set.liftType === liftType.id)
+            .sort((setA, setB) => (this.calculateOneRepMax(setB.weight, setB.reps) - this.calculateOneRepMax(setA.weight, setA.reps)))[0]
+        ));
+    },
+    chunkedMaxes() {
+      return this.chunk(this.maxes, 2);
+    },
   },
 
   created() {
@@ -128,9 +148,7 @@ export default {
   },
 
   methods: {
-    calculateOneRepMax(weight, reps) {
-      return Math.floor(weight / (1.0278 - (0.0278 * reps)));
-    },
+    calculateOneRepMax,
     async fetchInitialData() {
       this.isLoading = true;
 
@@ -151,7 +169,18 @@ export default {
     },
     handleModalClose() {
       this.isAddingSet = false;
-    }
+    },
+    chunk(arr, len) {
+      const chunks = []
+      let i = 0
+      const n = arr.length
+
+      while (i < n) {
+        chunks.push(arr.slice(i, i += len))
+      }
+
+      return chunks
+    },
   },
 }
 </script>
@@ -163,5 +192,22 @@ body, html {
   margin: 0;
   padding: 0;
   background-color: hsl(0, 0%, 96%);
+}
+
+.title {
+  font-weight: 800;
+}
+
+.button {
+  font-weight: bold;
+}
+
+.card-header {
+  box-shadow: none;
+}
+
+.card-header-title {
+  text-transform: capitalize;
+  color: hsl(0, 0%, 50%);
 }
 </style>
