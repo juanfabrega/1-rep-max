@@ -49,5 +49,10 @@ npm run build
 npm run lint
 ```
 
+### Deployment
+See firebase hosting deployment guide
+
+https://firebase.google.com/docs/hosting/quickstart
+
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
