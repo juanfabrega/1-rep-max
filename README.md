@@ -31,6 +31,7 @@ This project uses Firestore DB. It looks for data in the following collections, 
   reps: `Number`,
   weight: `Number`,
 }
+```
 
 
 ### Compiles and hot-reloads for development
