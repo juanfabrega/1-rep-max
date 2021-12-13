@@ -5,6 +5,10 @@
 npm install
 ```
 
+## Firebase Config
+Follow the instructions here to initialize a firebase project to use as a DB for this app.
+
+https://cloud.google.com/firestore/docs/client/get-firebase
 ### Compiles and hot-reloads for development
 ```
 npm run serve

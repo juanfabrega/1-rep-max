@@ -25,3 +25,4 @@ pnpm-debug.log*
 # Firebase stuff
 .firebase
 *.firebaserc
+firebaseConfig.js
